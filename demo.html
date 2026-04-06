@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hydration Dashboard</title>
+
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Segoe UI", sans-serif;
+}
+
+body {
+  height: 100vh;
+  background: linear-gradient(135deg, #2196f3, #21cbf3);
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.app {
+  width: 95%;
+  max-width: 900px;
+  height: 90vh;
+  background: rgba(255,255,255,0.1);
+  backdrop-filter: blur(15px);
+  border-radius: 20px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+h1 {
+  font-size: 1.8rem;
+}
+
+.greeting {
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+.main {
+  flex: 1;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* Circular Progress */
+.circle {
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  background: conic-gradient(#00e5ff 0deg, rgba(255,255,255,0.2) 0deg);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+}
+
+.circle::before {
+  content: "";
+  width: 140px;
+  height: 140px;
+  background: #0d47a1;
+  border-radius: 50%;
+  position: absolute;
+}
+
+.circle span {
+  position: relative;
+  font-size: 1.5rem;
+}
+
+/* Controls */
+.controls {
+  text-align: center;
+}
+
+button {
+  padding: 10px 15px;
+  margin: 5px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  background: #00e5ff;
+  color: black;
+  font-weight: bold;
+}
+
+button:hover {
+  background: #00bcd4;
+}
+
+input {
+  padding: 8px;
+  border-radius: 8px;
+  border: none;
+  width: 80px;
+  text-align: center;
+}
+
+/* History */
+.history {
+  max-height: 120px;
+  overflow-y: auto;
+  margin-top: 10px;
+  font-size: 0.9rem;
+}
+
+footer {
+  text-align: center;
+  font-size: 0.8rem;
+  opacity: 0.7;
+}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+  <header>
+    <div>
+      <h1>💧 Hydration Tracker</h1>
+      <div class="greeting" id="greeting"></div>
+    </div>
+    <div>
+      Goal: <input type="number" id="goalInput" value="2000"> ml
+    </div>
+  </header>
+
+  <div class="main">
+    <div class="circle" id="circle">
+      <span id="percent">0%</span>
+    </div>
+
+    <div class="controls">
+      <p><b id="status">0 / 2000 ml</b></p>
+
+      <button onclick="addWater(250)">+250 ml</button>
+      <button onclick="addWater(500)">+500 ml</button>
+
+      <br><br>
+
+      <input type="number" id="customMl" placeholder="ml">
+      <button onclick="addCustom()">Add</button>
+
+      <br><br>
+
+      <button onclick="resetData()">Reset</button>
+
+      <div class="history" id="history"></div>
+    </div>
+  </div>
+
+  <footer>Stay hydrated 💙</footer>
+</div>
+
+<script>
+let total = 0;
+let goal = 2000;
+
+// Load from localStorage
+if(localStorage.getItem("waterData")){
+  const data = JSON.parse(localStorage.getItem("waterData"));
+  total = data.total;
+  goal = data.goal;
+  document.getElementById("goalInput").value = goal;
+  renderHistory(data.history || []);
+}
+
+function saveData(history){
+  localStorage.setItem("waterData", JSON.stringify({
+    total, goal, history
+  }));
+}
+
+function updateUI(){
+  let percent = Math.min((total / goal) * 100, 100);
+  document.getElementById("percent").innerText = Math.round(percent) + "%";
+  document.getElementById("status").innerText = total + " / " + goal + " ml";
+
+  document.getElementById("circle").style.background =
+    `conic-gradient(#00e5ff ${percent * 3.6}deg, rgba(255,255,255,0.2) 0deg)`;
+}
+
+let history = [];
+
+function addWater(amount){
+  total += amount;
+  let time = new Date().toLocaleTimeString();
+  history.push(`+${amount} ml at ${time}`);
+  renderHistory(history);
+  saveData(history);
+  updateUI();
+}
+
+function addCustom(){
+  let val = parseInt(document.getElementById("customMl").value);
+  if(val){
+    addWater(val);
+  }
+}
+
+function resetData(){
+  total = 0;
+  history = [];
+  saveData(history);
+  renderHistory(history);
+  updateUI();
+}
+
+function renderHistory(hist){
+  let div = document.getElementById("history");
+  div.innerHTML = hist.slice(-5).reverse().join("<br>");
+}
+
+// Greeting
+function setGreeting(){
+  let hour = new Date().getHours();
+  let text = "Hello";
+  if(hour < 12) text = "Good Morning ☀️";
+  else if(hour < 18) text = "Good Afternoon 🌤️";
+  else text = "Good Evening 🌙";
+  document.getElementById("greeting").innerText = text;
+}
+
+// Goal change
+document.getElementById("goalInput").addEventListener("change", function(){
+  goal = parseInt(this.value);
+  saveData(history);
+  updateUI();
+});
+
+setGreeting();
+updateUI();
+</script>
+
+</body>
+</html>
